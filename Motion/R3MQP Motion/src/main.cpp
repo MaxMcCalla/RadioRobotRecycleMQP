@@ -6,6 +6,8 @@ const int STATE_MOVE_ARM = 1;
 
 int state;
 
+int serialTimer = 0;
+
 int buttonPins[4] = {2,4,5,18};
 
 int ticksToDegrees[4] = {1,1,1,1};
@@ -14,9 +16,11 @@ int ticksToDegrees[4] = {1,1,1,1};
 AccelStepper Step1(AccelStepper::FULL2WIRE,12,14);
 AccelStepper Step2(AccelStepper::FULL2WIRE, 27,26);
 AccelStepper Step3(AccelStepper::FULL2WIRE, 25,33);
-AccelStepper Step4(AccelStepper::FULL2WIRE, 32,35);
+AccelStepper Step4(AccelStepper::FULL2WIRE, 13,32);
 
 AccelStepper Motors[4] = {Step1,Step2,Step3,Step4};
+
+double motorSetpoints[4] = {0,0,0,0};
 
 bool getLimitSwitch(int switchID){
   //return digitalRead(buttonPins[switchID]);
@@ -45,6 +49,12 @@ void moveMotorUnprotected(int motorID, double position){
     Motors[motorID].run();
 }
 
+void moveAllMotorsUnprotected(double motorPositions[]){
+  for(int i = 0; i < 4; i++){
+    moveMotorUnprotected(i,motorPositions[i]);
+  }
+}
+
 void moveMotorToSwitch(int motorID, bool FWD){
   int mult = 0;
   if(FWD){
@@ -63,6 +73,10 @@ void moveAllMotors(double motorPositions[]){
   for(int i = 0; i < 4; i++){
     moveMotor(i,motorPositions[i]);
   }
+}
+
+void changeMotorSetpoint(int motorID, int setpoint){
+  motorSetpoints[motorID] = motorSetpoints[motorID] + setpoint;
 }
 
 
@@ -101,7 +115,7 @@ void setup() {
   Motors[3].setAcceleration(200.0);
 //  delay(1000);
   // put your setup code here, to run once:
-  
+  serialTimer = millis();
 }
 
 void loop() {
@@ -126,16 +140,53 @@ void loop() {
 
     //moveMotorUnprotected(1,-1000);
     
-    moveMotorUnprotected(0,1000);
-    moveMotorUnprotected(1,-1000);
-    moveMotorUnprotected(2,2000);
-    //moveMotorUnprotected(3,-200);
   //}
   //delay(100);
-  //int in = readSerial();
-  //if(in != 0){
-  //Serial.println(in);
- // }
+
+  if(millis() - serialTimer > 100){
+    //q 81/113, w 87/119, a 65/97, s 83/115, z 90/122, x 88/120, 1 49 2 50  
+
+    int in = readSerial();
+    if(in != 0){
+      Serial.println(in);
+      switch(in){
+        case 113:
+          changeMotorSetpoint(0,100);
+          break;
+        case 119:
+          changeMotorSetpoint(0,-100);
+          break;
+        case 97:
+          changeMotorSetpoint(2,100);
+          break;
+        case 115:
+          changeMotorSetpoint(2,-100);
+          break;
+        case 122:
+          changeMotorSetpoint(3,100);
+          break;
+        case 120:
+          changeMotorSetpoint(3,-100);
+          break;
+        case 49:
+          changeMotorSetpoint(1,100);
+          break;
+        case 50:
+          changeMotorSetpoint(1,-100);
+          break;
+        default:
+          break;
+      }
+    }
+    serialTimer = millis();
+  }
+
+  moveAllMotorsUnprotected(motorSetpoints);
+
+  //1 Base Left
+  //Q Shoulder Out
+  //A Elbow Up
+  //Z Wrist Clockwise
   // put your main code here, to run repeatedly:
 
 }
