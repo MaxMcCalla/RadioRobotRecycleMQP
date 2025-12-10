@@ -12,6 +12,9 @@ int buttonPins[4] = {2,4,5,18};
 
 int ticksToDegrees[4] = {1,1,1,1};
 
+char receivedChars[32] = {};
+bool settingsReady = false;
+
 // put function declarations here:
 AccelStepper Step1(AccelStepper::FULL2WIRE,12,14);
 AccelStepper Step2(AccelStepper::FULL2WIRE, 27,26);
@@ -79,6 +82,10 @@ void changeMotorSetpoint(int motorID, int setpoint){
   motorSetpoints[motorID] = motorSetpoints[motorID] + setpoint;
 }
 
+void setMotorSetpoint(int motorID, int setpoint){
+  motorSetpoints[motorID] = setpoint;
+}
+
 
 void stopAllMotors(){
   for(int i = 0; i < sizeof(Motors); i++){
@@ -118,6 +125,53 @@ void setup() {
   serialTimer = millis();
 }
 
+void recvWithEndMarker() {
+    int numChars = 32;
+    static byte ndx = 0;
+    char endMarker = '>';
+    char rc;
+    
+    while (Serial.available() > 0 && settingsReady == false) {
+        rc = Serial.read();
+
+        if (rc != endMarker) {
+            receivedChars[ndx] = rc;
+            ndx++;
+            if (ndx >= numChars) {
+                ndx = numChars - 1;
+            }
+        }
+        else {
+            receivedChars[ndx] = '\0'; // terminate the string
+            ndx = 0;
+            settingsReady = true;
+        }
+    }
+}
+
+void useSettings(){
+  if(settingsReady){
+    char j[1] = {};
+    j[0] = receivedChars[0];
+    int jointID = atoi(j);
+    char a[31] = {};
+    for(int i = 1; i < 32; i++){
+      a[i-1] = receivedChars[i];
+    }
+
+    float set = atof(a);
+
+    Serial.println(jointID);
+    Serial.println(set);
+
+    setMotorSetpoint(jointID,set);
+
+    settingsReady = false;
+
+  }
+}
+
+
 void loop() {
   /*if(state == STATE_RESET_ENCODERS){
     double motorSettings[4] = {0,0,0,0};
@@ -143,10 +197,15 @@ void loop() {
   //}
   //delay(100);
 
+
+
   if(millis() - serialTimer > 100){
     //q 81/113, w 87/119, a 65/97, s 83/115, z 90/122, x 88/120, 1 49 2 50  
 
-    int in = readSerial();
+    recvWithEndMarker();
+    useSettings();
+    
+    /*int in = readSerial();
     if(in != 0){
       Serial.println(in);
       switch(in){
@@ -178,7 +237,10 @@ void loop() {
           break;
       }
     }
-    serialTimer = millis();
+    serialTimer = millis();*/
+
+
+
   }
 
   moveAllMotorsUnprotected(motorSetpoints);
