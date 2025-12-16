@@ -4,6 +4,10 @@
 const int STATE_RESET_ENCODERS = 0;
 const int STATE_MOVE_ARM = 1;
 
+const float ticksPerRotation = 1000;
+
+float GearRatio[4] = {25,20,15,1};
+
 int state;
 
 int serialTimer = 0;
@@ -15,9 +19,10 @@ int ticksToDegrees[4] = {1,1,1,1};
 char receivedChars[32] = {};
 bool settingsReady = false;
 
+
 // put function declarations here:
-AccelStepper Step1(AccelStepper::FULL2WIRE,12,14);
-AccelStepper Step2(AccelStepper::FULL2WIRE, 27,26);
+AccelStepper Step1(AccelStepper::FULL2WIRE, 27,26);
+AccelStepper Step2(AccelStepper::FULL2WIRE,12,14);
 AccelStepper Step3(AccelStepper::FULL2WIRE, 25,33);
 AccelStepper Step4(AccelStepper::FULL2WIRE, 13,32);
 
@@ -57,6 +62,13 @@ void moveAllMotorsUnprotected(double motorPositions[]){
     moveMotorUnprotected(i,motorPositions[i]);
   }
 }
+
+void moveAllMotorsUnprotectedDegrees(double motorPositions[]){
+  for(int i = 0; i < 4; i++){
+    moveMotorUnprotected(i,motorPositions[i]*ticksPerRotation*GearRatio[i]/90);
+  }
+}
+
 
 void moveMotorToSwitch(int motorID, bool FWD){
   int mult = 0;
@@ -112,14 +124,14 @@ int readSerial(){
 void setup() {
   Serial.begin(115200);
   state = STATE_RESET_ENCODERS;
-  Motors[0].setMaxSpeed(400.0);
-  Motors[0].setAcceleration(200.0);
-  Motors[1].setMaxSpeed(400.0);
-  Motors[1].setAcceleration(200.0);
-  Motors[2].setMaxSpeed(400.0);
-  Motors[2].setAcceleration(200.0);
-  Motors[3].setMaxSpeed(400.0);
-  Motors[3].setAcceleration(200.0);
+  Motors[0].setMaxSpeed(1000.0);
+  Motors[0].setAcceleration(500.0);
+  Motors[1].setMaxSpeed(1000.0);
+  Motors[1].setAcceleration(500.0);
+  Motors[2].setMaxSpeed(1000.0);
+  Motors[2].setAcceleration(500.0);
+  Motors[3].setMaxSpeed(1000.0);
+  Motors[3].setAcceleration(500.0);
 //  delay(1000);
   // put your setup code here, to run once:
   serialTimer = millis();
@@ -243,7 +255,7 @@ void loop() {
 
   }
 
-  moveAllMotorsUnprotected(motorSetpoints);
+  moveAllMotorsUnprotectedDegrees(motorSetpoints);
 
   //1 Base Left
   //Q Shoulder Out
