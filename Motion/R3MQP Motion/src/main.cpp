@@ -1,18 +1,18 @@
 #include <Arduino.h>
 #include <AccelStepper.h>
 
-const int STATE_RESET_ENCODERS = 0;
-const int STATE_MOVE_ARM = 1;
+int STATE_RESET_ENCODERS = 0;
+int STATE_MOVE_ARM = 1;
 
 const float ticksPerRotation = 1000;
 
 float GearRatio[4] = {25,20,15,1};
 
-int state;
+int state = 0;
 
 int serialTimer = 0;
 
-int buttonPins[4] = {2,4,5,18};
+int buttonPins[4] = {23,22,21,19};
 
 int ticksToDegrees[4] = {1,1,1,1};
 
@@ -31,8 +31,8 @@ AccelStepper Motors[4] = {Step1,Step2,Step3,Step4};
 double motorSetpoints[4] = {0,0,0,0};
 
 bool getLimitSwitch(int switchID){
-  //return digitalRead(buttonPins[switchID]);
-  return true;
+  return digitalRead(buttonPins[switchID]);
+  //return true;
 }
 
 void resetMotors(){
@@ -78,8 +78,11 @@ void moveMotorToSwitch(int motorID, bool FWD){
     mult = -1;
   }
   if(!getLimitSwitch(motorID)){
-    Motors[motorID].move(100*mult);
+    Motors[motorID].move(500*mult);
+    Motors[motorID].run();
   } else{
+    Motors[motorID].setCurrentPosition(0);
+    //Add the precise positions to set. Base = 180, Shoulder = ?, Elbow = 135, Wrist = 225
     Motors[motorID].stop();
   }
 }
@@ -100,7 +103,7 @@ void setMotorSetpoint(int motorID, int setpoint){
 
 
 void stopAllMotors(){
-  for(int i = 0; i < sizeof(Motors); i++){
+  for(int i = 0; i < 4; i++){
     Motors[i].stop();
   }
 }
@@ -118,23 +121,6 @@ int readSerial(){
     return incomingByte;
   }
   return 0;
-}
-
-
-void setup() {
-  Serial.begin(115200);
-  state = STATE_RESET_ENCODERS;
-  Motors[0].setMaxSpeed(1000.0);
-  Motors[0].setAcceleration(500.0);
-  Motors[1].setMaxSpeed(1000.0);
-  Motors[1].setAcceleration(500.0);
-  Motors[2].setMaxSpeed(1000.0);
-  Motors[2].setAcceleration(500.0);
-  Motors[3].setMaxSpeed(1000.0);
-  Motors[3].setAcceleration(500.0);
-//  delay(1000);
-  // put your setup code here, to run once:
-  serialTimer = millis();
 }
 
 void recvWithEndMarker() {
@@ -183,22 +169,46 @@ void useSettings(){
   }
 }
 
+void setup() {
+  pinMode(23,INPUT);
+  pinMode(22,INPUT);
+  pinMode(21,INPUT);
+  pinMode(19,INPUT);
+  Serial.begin(115200);
+  state = STATE_RESET_ENCODERS;
+  Motors[0].setMaxSpeed(1000.0);
+  Motors[0].setAcceleration(500.0);
+  Motors[1].setMaxSpeed(1000.0);
+  Motors[1].setAcceleration(500.0);
+  Motors[2].setMaxSpeed(1000.0);
+  Motors[2].setAcceleration(500.0);
+  Motors[3].setMaxSpeed(1000.0);
+  Motors[3].setAcceleration(500.0);
+//  delay(1000);
+  // put your setup code here, to run once:
+  serialTimer = millis();
+}
+
 
 void loop() {
-  /*if(state == STATE_RESET_ENCODERS){
+  if(state == STATE_RESET_ENCODERS){
     double motorSettings[4] = {0,0,0,0};
-    moveMotorToSwitch(0,true);
-    moveMotorToSwitch(1,true);
+    Serial.print(getLimitSwitch(0));
+    moveMotorToSwitch(0,false);
+//    moveMotorToSwitch(1,true);
+    Serial.print(getLimitSwitch(2));
     moveMotorToSwitch(2,true);
-    moveMotorToSwitch(3,true);
+    Serial.println(getLimitSwitch(3));
+    moveMotorToSwitch(3,false);
     
-    if(getLimitSwitch(0) && getLimitSwitch(1) && getLimitSwitch(2) && getLimitSwitch(3)){
-      state = STATE_MOVE_ARM;
+    if(getLimitSwitch(0) && /*getLimitSwitch(1) &&*/ getLimitSwitch(2) && getLimitSwitch(3)){
+      state = 1;
       stopAllMotors();
     }
 
+    
   }  
-  if(state == STATE_MOVE_ARM){*/
+  if(state == STATE_MOVE_ARM){
     //1 - Base
     //0 - Shoulder
     //2 - Elbow
@@ -262,5 +272,5 @@ void loop() {
   //A Elbow Up
   //Z Wrist Clockwise
   // put your main code here, to run repeatedly:
-
+  }
 }
