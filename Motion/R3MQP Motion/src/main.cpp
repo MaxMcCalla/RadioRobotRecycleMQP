@@ -21,7 +21,7 @@ bool settingsReady = false;
 
 
 // put function declarations here:
-AccelStepper Step1(AccelStepper::FULL2WIRE, 27,26);
+AccelStepper Step1(AccelStepper::FULL2WIRE, 26,27);
 AccelStepper Step2(AccelStepper::FULL2WIRE,12,14);
 AccelStepper Step3(AccelStepper::FULL2WIRE, 25,33);
 AccelStepper Step4(AccelStepper::FULL2WIRE, 13,32);
@@ -162,7 +162,7 @@ void useSettings(){
     Serial.println(jointID);
     Serial.println(set);
 
-    setMotorSetpoint(jointID,set);
+    setMotorSetpoint(jointID-1,set);
 
     settingsReady = false;
 
@@ -175,7 +175,7 @@ void setup() {
   pinMode(21,INPUT);
   pinMode(19,INPUT);
   Serial.begin(115200);
-  state = STATE_RESET_ENCODERS;
+  state = STATE_MOVE_ARM;
   Motors[0].setMaxSpeed(1000.0);
   Motors[0].setAcceleration(500.0);
   Motors[1].setMaxSpeed(1000.0);
