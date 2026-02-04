@@ -4,23 +4,30 @@
 int STATE_RESET_ENCODERS = 0;
 int STATE_MOVE_ARM = 1;
 
+//From the settings on the Drivers
 const float ticksPerRotation = 1000;
 
+//For each motor, including the gearbox on the motor
 float GearRatio[4] = {25,20,15,1};
 
+//This controls whether the robot is in calibration state or motion state
 int state = 0;
 
+//This stores the time when we should check for new serial messages from the kinematics code
 int serialTimer = 0;
 
+//Pins for the limit switches
 int buttonPins[4] = {23,22,21,19};
 
-int ticksToDegrees[4] = {1,1,1,1};
-
+//For recieving Serial data from kinematics
 char receivedChars[32] = {};
 bool settingsReady = false;
 
+//This tells which motors have already been calibrated
+int motorsReset = -1;
 
-// put function declarations here:
+
+//Creates the four stepper motors
 AccelStepper Step1(AccelStepper::FULL2WIRE, 26,27);
 AccelStepper Step2(AccelStepper::FULL2WIRE,12,14);
 AccelStepper Step3(AccelStepper::FULL2WIRE, 25,33);
@@ -28,41 +35,36 @@ AccelStepper Step4(AccelStepper::FULL2WIRE, 13,32);
 
 AccelStepper Motors[4] = {Step1,Step2,Step3,Step4};
 
+//Positive and Negative soft limits for each motor
+int MotorsSoftLimitPositive[4] = {90,90,60,90};
+int MotorsSoftLimitNegative[4] = {-90,-45,-90,-90};
+
+//For storing the current motor target setpoints
 double motorSetpoints[4] = {0,0,0,0};
 
+//Input: SwitchID (0-4)
+//Output: The status of the requested limit switch (True = Pressed)
 bool getLimitSwitch(int switchID){
   return digitalRead(buttonPins[switchID]);
-  //return true;
 }
 
-void resetMotors(){
-  for(int i = 0; i < sizeof(Motors); i++){
-    Motors[i].setCurrentPosition(0);
-  }
-}
-
-
-
-void moveMotor(int motorID, double position){
-  if(!getLimitSwitch(motorID)){
-    Motors[motorID].moveTo(position);
-    Motors[motorID].run();
-  } else{
-    Motors[motorID].stop();    
-  }
-}
-
+//Input: motorID (0-4), position (in motor ticks)
+//Moves the desired motor to the desired position without checking software limits
 void moveMotorUnprotected(int motorID, double position){
     Motors[motorID].moveTo(position);
     Motors[motorID].run();
 }
 
+//Input: motorPositions (4 value array, in motor ticks)
+//Moves all motors to the desired positions without checking software limits 
 void moveAllMotorsUnprotected(double motorPositions[]){
   for(int i = 0; i < 4; i++){
     moveMotorUnprotected(i,motorPositions[i]);
   }
 }
 
+//Input: motorPositions (4 value array, in degrees)
+//Moves all motors to the desired positions without check software limits
 void moveAllMotorsUnprotectedDegrees(double motorPositions[]){
   for(int i = 0; i < 4; i++){
     moveMotorUnprotected(i,motorPositions[i]*ticksPerRotation*GearRatio[i]/90);
@@ -70,44 +72,71 @@ void moveAllMotorsUnprotectedDegrees(double motorPositions[]){
 }
 
 
+//Input: motorID (0-4), position (in motor ticks)
+//Moves the desired motor to the desired position while checking software limits for each motor
+void moveMotorProtected(int motorID, double position){
+  if(position > MotorsSoftLimitPositive[motorID]){
+    moveMotorUnprotected(motorID,MotorsSoftLimitPositive[motorID]);
+
+  } else if(position < MotorsSoftLimitNegative[motorID]){
+    moveMotorUnprotected(motorID,MotorsSoftLimitNegative[motorID]);
+  } else{
+    moveMotorUnprotected(motorID,position);
+  }
+}
+
+//Input: motorPositions (4 value array, in degrees)
+//Moves all motors to the desired positions while checking software limits for each motor
+void moveAllMotorsProtectedDegrees(double motorPositions[]){
+  for(int i = 0; i < 4; i++){
+    moveMotorProtected(i,motorPositions[i]*ticksPerRotation*GearRatio[i]/90);
+  }
+}
+
+//Input: motorID(0-4), FWD (should the motor move forward or backward to hit the switch?)
+//The selected motor will move until it hits the switch, where it will stop and set the motorsReset variable to indicate that it has been reset
 void moveMotorToSwitch(int motorID, bool FWD){
+  int switchPositions[4] = {-170, -45, -135, -225};
   int mult = 0;
   if(FWD){
     mult = 1;
   } else{
     mult = -1;
   }
-  if(!getLimitSwitch(motorID)){
+  if(!getLimitSwitch(motorID) || !motorID==1){
     Motors[motorID].move(500*mult);
     Motors[motorID].run();
   } else{
-    Motors[motorID].setCurrentPosition(0);
+    Motors[motorID].setCurrentPosition(switchPositions[motorID]*ticksPerRotation*GearRatio[motorID]/90);
     //Add the precise positions to set. Base = 180, Shoulder = ?, Elbow = 135, Wrist = 225
-    Motors[motorID].stop();
+    motorsReset = motorID;
+    Motors[motorID].moveTo(0);
+    Motors[motorID].run();
   }
 }
 
-void moveAllMotors(double motorPositions[]){
-  for(int i = 0; i < 4; i++){
-    moveMotor(i,motorPositions[i]);
-  }
-}
 
+//Input: motorID(0-4), setpoint(in degrees)
+//Sets the desired motor setpoint to the current angle + the desired change
 void changeMotorSetpoint(int motorID, int setpoint){
   motorSetpoints[motorID] = motorSetpoints[motorID] + setpoint;
 }
 
+//Input: motorID(0-4), setpoint(in degrees)
+//Sets the desired motor setpoint to the desired angle
 void setMotorSetpoint(int motorID, int setpoint){
   motorSetpoints[motorID] = setpoint;
 }
 
 
+//Sets all motors to stop at their current positions
 void stopAllMotors(){
   for(int i = 0; i < 4; i++){
     Motors[i].stop();
   }
 }
 
+//Fetches data from the Serial buffer
 int readSerial(){
   if (Serial.available() > 0) {
 
@@ -123,6 +152,7 @@ int readSerial(){
   return 0;
 }
 
+//Processes any serial data ending with ">" and stores it in "recievedChars"
 void recvWithEndMarker() {
     int numChars = 32;
     static byte ndx = 0;
@@ -147,6 +177,8 @@ void recvWithEndMarker() {
     }
 }
 
+
+//Takes the serial data from recievedChars and sets the motor setpoints to the recieved data
 void useSettings(){
   if(settingsReady){
     char j[1] = {};
@@ -193,13 +225,11 @@ void setup() {
 void loop() {
   if(state == STATE_RESET_ENCODERS){
     double motorSettings[4] = {0,0,0,0};
-    Serial.print(getLimitSwitch(0));
-    moveMotorToSwitch(0,false);
-//    moveMotorToSwitch(1,true);
-    Serial.print(getLimitSwitch(2));
-    moveMotorToSwitch(2,true);
-    Serial.println(getLimitSwitch(3));
-    moveMotorToSwitch(3,false);
+    bool motorFWD[4] = {false,true,true,false};
+    if(motorsReset < 3){
+      Serial.print(getLimitSwitch(motorsReset + 1));
+      moveMotorToSwitch(motorsReset+1,motorFWD[motorsReset+1]);
+    }
     
     if(getLimitSwitch(0) && /*getLimitSwitch(1) &&*/ getLimitSwitch(2) && getLimitSwitch(3)){
       state = 1;
