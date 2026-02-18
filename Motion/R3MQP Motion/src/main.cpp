@@ -54,8 +54,13 @@ bool getLimitSwitch(int switchID){
 //Input: motorID (0-4), position (in motor ticks)
 //Moves the desired motor to the desired position without checking software limits
 void moveMotorUnprotected(int motorID, double position){
+  if(motorID == 1){
+    Motors[motorID].moveTo(-position);
+    Motors[motorID].run();
+  } else{
     Motors[motorID].moveTo(position);
     Motors[motorID].run();
+  }
 }
 
 //Input: motorPositions (4 value array, in motor ticks)
