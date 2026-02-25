@@ -66,7 +66,7 @@ J = [j1 j2 j3 j4];
 function q = IK(pd,T,J)
 syms theta1 theta2 theta3 theta4
 
-q0 = [0,0,0,0];
+q0 = [0,-0.5,0,0];
 i=1;
 
 q = q0;
@@ -82,7 +82,9 @@ while(norm(pd-t(1:3,4))>e)
 
     dq=pinv(Jt(1:3,:)) * (pd-(t(1:3,4)));
     dq = round(dq,25);
-    q = q+dq';    
+    q = q+dq';  
+    disp(q)
+    disp(round(norm(pd-t(1:3,4))))
 end
 
 
@@ -117,8 +119,17 @@ while(true)
 inX = input("Select X")
 inY = input("Select Y")
 inZ = input("Select Z")
-joints = IK([inX,inY,inZ]',T,J)
+joints = IK([inX,inY,inZ]',T,J);
+disp(round(rad2deg(joints(2))))
+disp(round(rad2deg(joints(3))))
+test1 = round(fk(joints,T1))
+test2 = round(fk(joints,T1*T2))
+test3 = round(fk(joints,T1*T2*T3))
+test4 = round(fk(joints,T1*T2*T3*T4))
+test5 = round(fk(joints,T))
+x = [test1(1:3,4),test2(1:3,4),test3(1:3,4),test4(1:3,4),test5(1:3,4)]
 writeJointValues(joints)
+plot(x(1,:),x(3,:))
 
 end
 

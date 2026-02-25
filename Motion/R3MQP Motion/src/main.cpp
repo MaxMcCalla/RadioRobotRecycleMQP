@@ -8,7 +8,7 @@ int STATE_MOVE_ARM = 1;
 const float ticksPerRotation = 1000;
 
 //For each motor, including the gearbox on the motor
-float GearRatio[4] = {20,20,15,1};
+float GearRatio[4] = {20,20,22.5,1};
 
 //This controls whether the robot is in calibration state or motion state
 int state = 0;
@@ -20,7 +20,7 @@ int serialTimer = 0;
 int switchHit = 0;
 
 //Pins for the limit switches
-int buttonPins[4] = {23,22,21,19};
+int buttonPins[4] = {23,18,21,22};
 
 //For recieving Serial data from kinematics
 char receivedChars[32] = {};
@@ -105,7 +105,7 @@ void moveAllMotorsProtectedDegrees(double motorPositions[]){
 //The selected motor will move until it hits the switch, where it will stop and set the motorsReset variable to indicate that it has been reset
 void moveMotorToSwitch(int motorID, bool FWD){
   //int switchPositions[4] = {-170, -45, -135, -225};
-    int switchPositions[4] = {90, 0, 90, 0};
+    int switchPositions[4] = {90, -60, 100, 0};
   int mult = 0;
   if(FWD){
     mult = 1;
@@ -119,7 +119,7 @@ void moveMotorToSwitch(int motorID, bool FWD){
     switchHit = 0;
   }
 
-  if(switchHit > 3 || motorID==1 || motorID==3){
+  if(switchHit > 3 || motorID==3){
     Motors[motorID].setCurrentPosition(switchPositions[motorID]*ticksPerRotation*GearRatio[motorID]/90);
     //Add the precise positions to set. Base = 180, Shoulder = ?, Elbow = 135, Wrist = 225
     motorsReset = motorID;
@@ -227,7 +227,7 @@ void setup() {
   pinMode(23,INPUT);
   pinMode(22,INPUT);
   pinMode(21,INPUT);
-  pinMode(19,INPUT);
+  pinMode(18,INPUT);
   Serial.begin(115200);
   state = STATE_RESET_ENCODERS;
   Motors[0].setMaxSpeed(2000.0);
@@ -245,9 +245,10 @@ void setup() {
 
 
 void loop() {
+//  Serial.print(digitalRead(getLimitSwitch(0)));
   if(state == STATE_RESET_ENCODERS){
     double motorSettings[4] = {0,0,0,0};
-    bool motorFWD[4] = {true,true,true,false};
+    bool motorFWD[4] = {true,false,true,false};
     if(motorsReset < 3){
       /*Serial.print(" ");
       Serial.print(getLimitSwitch(motorsReset + 1));
