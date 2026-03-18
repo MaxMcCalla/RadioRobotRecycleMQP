@@ -16,9 +16,16 @@ c4 = cos(theta4);
 s4 = sin(theta4);
 
 DHTable = [0 5.38 0 0
-           theta1 5.4 2 deg2rad(90)
+           theta1 5.4 0 deg2rad(90)
            theta2+deg2rad(90) 0 14.5 0
-           theta3 0 2 deg2rad(90)
+           theta3 0 0 deg2rad(90)
+           theta4 13 0 0
+           ];
+
+NewDHTable = [0 5.38 0 0
+           theta1 5.4 0 deg2rad(90)
+           theta2+deg2rad(90) 0 14.5 0
+           theta3 0 0 deg2rad(90)
            theta4 13 0 0
            ];
 
@@ -89,7 +96,7 @@ end
 
 
 %Joint Angles
-q
+%q
 
 end
 
@@ -113,26 +120,33 @@ end
 
 
 
+round(fk([0,0,0,0],T),4)
 
+allMat = [];
 
 while(true)
-inX = input("Select X")
-inY = input("Select Y")
-inZ = input("Select Z")
+inX = input("Select X");
+inY = input("Select Y");
+inZ = input("Select Z");
 joints = IK([inX,inY,inZ]',T,J);
 disp(round(rad2deg(joints(2))))
 disp(round(rad2deg(joints(3))))
-test1 = round(fk(joints,T1))
-test2 = round(fk(joints,T1*T2))
-test3 = round(fk(joints,T1*T2*T3))
-test4 = round(fk(joints,T1*T2*T3*T4))
-test5 = round(fk(joints,T))
-x = [test1(1:3,4),test2(1:3,4),test3(1:3,4),test4(1:3,4),test5(1:3,4)]
+test1 = round(fk(joints,T1));
+test2 = round(fk(joints,T1*T2));
+test3 = round(fk(joints,T1*T2*T3));
+test4 = round(fk(joints,T1*T2*T3*T4));
+test5 = round(fk(joints,T),4)
+allMat = [allMat;test5];
+allMat
+x = [test1(1:3,4),test2(1:3,4),test3(1:3,4),test4(1:3,4),test5(1:3,4)];
+plot3(x(1,:),x(2,:),x(3,:))
 writeJointValues(joints)
-plot(x(1,:),x(3,:))
+xlim([0,30])
+ylim([-25,25])
+zlim([0,40])
 
 end
 
 
-%Verification with FK
+Verification with FK
 %round(fk(q,T),5)

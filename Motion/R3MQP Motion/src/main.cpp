@@ -8,7 +8,7 @@ int STATE_MOVE_ARM = 1;
 const float ticksPerRotation = 1000;
 
 //For each motor, including the gearbox on the motor
-float GearRatio[4] = {20,20,22.5,1};
+float GearRatio[4] = {19,25,20,1};
 
 //This controls whether the robot is in calibration state or motion state
 int state = 0;
@@ -54,7 +54,7 @@ bool getLimitSwitch(int switchID){
 //Input: motorID (0-4), position (in motor ticks)
 //Moves the desired motor to the desired position without checking software limits
 void moveMotorUnprotected(int motorID, double position){
-  if(motorID == 1){
+  if(motorID == 1 || motorID == 0){
     Motors[motorID].moveTo(-position);
     Motors[motorID].run();
   } else{
@@ -104,8 +104,8 @@ void moveAllMotorsProtectedDegrees(double motorPositions[]){
 //Input: motorID(0-3), FWD (should the motor move forward or backward to hit the switch?)
 //The selected motor will move until it hits the switch, where it will stop and set the motorsReset variable to indicate that it has been reset
 void moveMotorToSwitch(int motorID, bool FWD){
-  //int switchPositions[4] = {-170, -45, -135, -225};
-    int switchPositions[4] = {90, -60, 100, 0};
+  //int switchPositions[4] = {-170, -45, -135, -225}; 14
+    int switchPositions[4] = {90, -48, 117, 0};
   int mult = 0;
   if(FWD){
     mult = 1;
@@ -115,6 +115,7 @@ void moveMotorToSwitch(int motorID, bool FWD){
 
   if(getLimitSwitch(motorID)){
     switchHit ++;
+    //Serial.print (switchHit);
   } else{
     switchHit = 0;
   }
@@ -125,7 +126,7 @@ void moveMotorToSwitch(int motorID, bool FWD){
     motorsReset = motorID;
     Motors[motorID].moveTo(0);
     Motors[motorID].run();
-    Serial.print(motorsReset);
+    //Serial.print(motorsReset);
     switchHit = 0;
   } else{
     Motors[motorID].move(1000*mult);
@@ -258,10 +259,10 @@ void loop() {
       Serial.print(getLimitSwitch(0));
       Serial.print(" ");
       Serial.print(getLimitSwitch(1));
-      Serial.print(" ");*/
-      //Serial.print(getLimitSwitch(2));
-      //Serial.print(" ");
-      //Serial.println(getLimitSwitch(3));
+      Serial.print(" ");
+      Serial.print(getLimitSwitch(2));
+      Serial.print(" ");
+      Serial.println(getLimitSwitch(3));*/
       moveMotorToSwitch(motorsReset+1,motorFWD[motorsReset+1]);
     }
     
