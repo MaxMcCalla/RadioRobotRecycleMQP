@@ -101,8 +101,9 @@ end
 end
 
 function writeJointValues(j)
-    for index = 0:10  
-        target = "/dev/ttyUSB" + index;
+serials = serialportlist();
+    for index = 1:length(serials)  
+        target = serials(index);
         try
             output = serialport(target,115200);
             break;
