@@ -108,7 +108,7 @@ serials = serialportlist();
             output = serialport(target,115200);
             break;
         catch exception
-            disp(target)
+            disp(target);
         end
     end
     for i=1:4
@@ -124,6 +124,8 @@ end
 round(fk([0,0,0,0],T),4)
 
 allMat = [];
+node = ros2node("/robot");
+pose_publisher = ros2publisher(node, '/robot_pose', 'geometry_msgs/Transform');
 
 while(true)
 inX = input("Select X");
@@ -137,14 +139,28 @@ test2 = round(fk(joints,T1*T2));
 test3 = round(fk(joints,T1*T2*T3));
 test4 = round(fk(joints,T1*T2*T3*T4));
 test5 = round(fk(joints,T),4)
-allMat = [allMat;test5];
-allMat
+%allMat = [allMat;test5];
+%allMat
+test4
 x = [test1(1:3,4),test2(1:3,4),test3(1:3,4),test4(1:3,4),test5(1:3,4)];
 plot3(x(1,:),x(2,:),x(3,:))
 writeJointValues(joints)
 xlim([0,30])
 ylim([-25,25])
 zlim([0,40])
+msg = ros2message(pose_publisher);
+test5
+inv(test5)
+transMsg = double(inv(test5))
+msg.translation.x = transMsg(1, 4);
+msg.translation.y = transMsg(2, 4);
+msg.translation.z = transMsg(3, 4);
+quat = quatnormalize(rotm2quat(double(transMsg(1:3, 1:3))));
+msg.rotation.x = quat(1);
+msg.rotation.y = quat(2);
+msg.rotation.z = quat(3);
+msg.rotation.w = quat(4);
+send(pose_publisher, msg);
 
 end
 
