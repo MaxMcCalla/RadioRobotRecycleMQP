@@ -128,10 +128,26 @@ node = ros2node("/robot");
 pose_publisher = ros2publisher(node, '/robot_pose', 'geometry_msgs/Transform');
 
 while(true)
-inX = input("Select X");
-inY = input("Select Y");
-inZ = input("Select Z");
-joints = IK([inX,inY,inZ]',T,J);
+spaceSet = false;
+space = input("Select World(1) or Joint(2) space");
+while(spaceSet == false)
+    if space == 1
+        inX = input("Select X");
+        inY = input("Select Y");
+        inZ = input("Select Z");
+        joints = IK([inX,inY,inZ]',T,J)
+        spaceSet = true;
+    elseif space == 2
+        j0 = deg2rad(input("Select Base Angle"));
+        j1 = deg2rad(input("Select Shoulder Angle"));
+        j2 = deg2rad(input("Select Elbow Angle"));
+        j3 = deg2rad(input("Select Wrist Angle"));
+        joints = [j0, j1, j2, j3]
+        spaceSet = true;
+    else
+        disp("invalid input")
+    end
+end
 disp(round(rad2deg(joints(2))))
 disp(round(rad2deg(joints(3))))
 test1 = round(fk(joints,T1));

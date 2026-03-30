@@ -105,7 +105,7 @@ void moveAllMotorsProtectedDegrees(double motorPositions[]){
 //The selected motor will move until it hits the switch, where it will stop and set the motorsReset variable to indicate that it has been reset
 void moveMotorToSwitch(int motorID, bool FWD){
   //int switchPositions[4] = {-170, -45, -135, -225}; 14
-    int switchPositions[4] = {90, -48, 117, 0};
+    int switchPositions[4] = {90, -46, 111, -225};
   int mult = 0;
   if(FWD){
     mult = 1;

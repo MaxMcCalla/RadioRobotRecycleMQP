@@ -77,8 +77,8 @@ class CameraService(Node):
 
         #Variables of camera. 
         self.ctx = rs.context()
-        list = self.ctx.query_devices()
-        if(len(list) == 0):
+        listOfDevices = self.ctx.query_devices()
+        if(len(listOfDevices) == 0):
             raise RuntimeError("No device connected.")
         self.device = list[0]
         self.cfg = rs.config()
