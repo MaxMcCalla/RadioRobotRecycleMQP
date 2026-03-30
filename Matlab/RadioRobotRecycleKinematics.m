@@ -146,6 +146,7 @@ while(spaceSet == false)
         spaceSet = true;
     else
         disp("invalid input")
+        space = input("Select World(1) or Joint(2) space");
     end
 end
 disp(round(rad2deg(joints(2))))
