@@ -90,8 +90,8 @@ while(norm(pd-t(1:3,4))>e)
     dq=pinv(Jt(1:3,:)) * (pd-(t(1:3,4)));
     dq = round(dq,25);
     q = q+dq';  
-    disp(q)
-    disp(round(norm(pd-t(1:3,4))))
+    %disp(q)
+    %disp(round(norm(pd-t(1:3,4))))
 end
 
 
@@ -111,11 +111,15 @@ serials = serialportlist();
             disp(target);
         end
     end
-    for i=1:4
+    for i=1:5
         send = string(i) + string(round(rad2deg(j(i)),5)) + ">";
         write(output, send, "string");
         pause(0.2);
     end
+    %Gripper State
+    send = string(i) + string(j(6)) + ">";
+    write(output, send, "string");
+    pause(0.2);
 end
 
 
@@ -135,30 +139,39 @@ while(spaceSet == false)
         inX = input("Select X");
         inY = input("Select Y");
         inZ = input("Select Z");
-        joints = IK([inX,inY,inZ]',T,J)
+        j4 = deg2rad(input("Select Wrist Tilt"));
+        j5 = input("Select Gripper State");
+        joints = [IK([inX,inY,inZ]',T,J),j4,j5];
+        disp("Joint Values:")
+        for index = 1:5
+            disp(round(rad2deg(joints(index))))
+        end
+            disp(joints(6))
         spaceSet = true;
     elseif space == 2
         j0 = deg2rad(input("Select Base Angle"));
         j1 = deg2rad(input("Select Shoulder Angle"));
         j2 = deg2rad(input("Select Elbow Angle"));
         j3 = deg2rad(input("Select Wrist Angle"));
-        joints = [j0, j1, j2, j3]
+        j4 = deg2rad(input("Select Wrist Tilt"));
+        j5 = input("Select Gripper State");
+        joints = [j0, j1, j2, j3, j4, j5];
         spaceSet = true;
     else
         disp("invalid input")
         space = input("Select World(1) or Joint(2) space");
     end
 end
-disp(round(rad2deg(joints(2))))
-disp(round(rad2deg(joints(3))))
-test1 = round(fk(joints,T1));
-test2 = round(fk(joints,T1*T2));
-test3 = round(fk(joints,T1*T2*T3));
-test4 = round(fk(joints,T1*T2*T3*T4));
-test5 = round(fk(joints,T),4)
+%disp(round(rad2deg(joints(2))))
+%disp(round(rad2deg(joints(3))))
+test1 = round(fk(joints(1:4),T1));
+test2 = round(fk(joints(1:4),T1*T2));
+test3 = round(fk(joints(1:4),T1*T2*T3));
+test4 = round(fk(joints(1:4),T1*T2*T3*T4));
+test5 = round(fk(joints(1:4),T),4);
 %allMat = [allMat;test5];
 %allMat
-test4
+%test4
 x = [test1(1:3,4),test2(1:3,4),test3(1:3,4),test4(1:3,4),test5(1:3,4)];
 plot3(x(1,:),x(2,:),x(3,:))
 writeJointValues(joints)
@@ -168,7 +181,7 @@ zlim([0,40])
 msg = ros2message(pose_publisher);
 test5
 inv(test5)
-transMsg = double(inv(test5))
+transMsg = double(inv(test5));
 msg.translation.x = transMsg(1, 4);
 msg.translation.y = transMsg(2, 4);
 msg.translation.z = transMsg(3, 4);

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <AccelStepper.h>
+#include <ESP32Servo.h>
 
 int STATE_RESET_ENCODERS = 0;
 int STATE_MOVE_ARM = 1;
@@ -37,6 +38,9 @@ AccelStepper Step3(AccelStepper::FULL2WIRE, 25,33);
 AccelStepper Step4(AccelStepper::FULL2WIRE, 13,32);
 
 AccelStepper Motors[4] = {Step1,Step2,Step3,Step4};
+
+Servo GripperServo;
+Servo WristServo;
 
 //Positive and Negative soft limits for each motor
 int MotorsSoftLimitPositive[4] = {90,90,60,90};
@@ -105,7 +109,7 @@ void moveAllMotorsProtectedDegrees(double motorPositions[]){
 //The selected motor will move until it hits the switch, where it will stop and set the motorsReset variable to indicate that it has been reset
 void moveMotorToSwitch(int motorID, bool FWD){
   //int switchPositions[4] = {-170, -45, -135, -225}; 14
-    int switchPositions[4] = {90, -46, 111, -225};
+    int switchPositions[4] = {90, -46, 111, 45};
   int mult = 0;
   if(FWD){
     mult = 1;
@@ -120,7 +124,7 @@ void moveMotorToSwitch(int motorID, bool FWD){
     switchHit = 0;
   }
 
-  if(switchHit > 3 || motorID==3){
+  if(switchHit > 3 ){//|| motorID==3){
     Motors[motorID].setCurrentPosition(switchPositions[motorID]*ticksPerRotation*GearRatio[motorID]/90);
     //Add the precise positions to set. Base = 180, Shoulder = ?, Elbow = 135, Wrist = 225
     motorsReset = motorID;
@@ -200,6 +204,22 @@ void recvWithEndMarker() {
     }
 }
 
+//Servo Functions
+void writeWrist(float angle){
+  //range is 100 to 180
+  if(angle >= 70 && angle <= 160){
+    WristServo.write(int(angle)-100);
+  }
+}
+
+void closeGripper(){
+  GripperServo.write(55);
+}
+
+void openGripper(){
+  GripperServo.write(100);
+}
+
 
 //Takes the serial data from recievedChars and sets the motor setpoints to the recieved data
 void useSettings(){
@@ -217,7 +237,17 @@ void useSettings(){
     Serial.println(jointID);
     Serial.println(set);
 
-    setMotorSetpoint(jointID-1,set);
+    if(jointID < 5){
+      setMotorSetpoint(jointID-1,set);
+    } else if(jointID == 5){
+      writeWrist(set);
+    } else if(jointID == 6){
+      if(set == 0){
+        closeGripper();
+      } else{
+        openGripper();
+      }
+    }
 
     settingsReady = false;
 
@@ -242,14 +272,16 @@ void setup() {
 //  delay(1000);
   // put your setup code here, to run once:
   serialTimer = millis();
+  GripperServo.attach(4);
+  WristServo.attach(15);
 }
 
 
 void loop() {
-//  Serial.print(digitalRead(getLimitSwitch(0)));
+ //Serial.print(digitalRead(getLimitSwitch(0)));
   if(state == STATE_RESET_ENCODERS){
     double motorSettings[4] = {0,0,0,0};
-    bool motorFWD[4] = {true,false,true,false};
+    bool motorFWD[4] = {true,false,true,true};
     if(motorsReset < 3){
       /*Serial.print(" ");
       Serial.print(getLimitSwitch(motorsReset + 1));
@@ -292,47 +324,8 @@ void loop() {
 
 
   if(millis() - serialTimer > 100){
-    //q 81/113, w 87/119, a 65/97, s 83/115, z 90/122, x 88/120, 1 49 2 50  
-
     recvWithEndMarker();
     useSettings();
-    
-    /*int in = readSerial();
-    if(in != 0){
-      Serial.println(in);
-      switch(in){
-        case 113:
-          changeMotorSetpoint(0,100);
-          break;
-        case 119:
-          changeMotorSetpoint(0,-100);
-          break;
-        case 97:
-          changeMotorSetpoint(2,100);
-          break;
-        case 115:
-          changeMotorSetpoint(2,-100);
-          break;
-        case 122:
-          changeMotorSetpoint(3,100);
-          break;
-        case 120:
-          changeMotorSetpoint(3,-100);
-          break;
-        case 49:
-          changeMotorSetpoint(1,100);
-          break;
-        case 50:
-          changeMotorSetpoint(1,-100);
-          break;
-        default:
-          break;
-      }
-    }
-    serialTimer = millis();*/
-
-
-
   }
 
   moveAllMotorsUnprotectedDegrees(motorSetpoints);
