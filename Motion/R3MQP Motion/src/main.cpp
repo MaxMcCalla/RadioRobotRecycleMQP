@@ -109,7 +109,7 @@ void moveAllMotorsProtectedDegrees(double motorPositions[]){
 //The selected motor will move until it hits the switch, where it will stop and set the motorsReset variable to indicate that it has been reset
 void moveMotorToSwitch(int motorID, bool FWD){
   //int switchPositions[4] = {-170, -45, -135, -225}; 14
-    int switchPositions[4] = {90, -46, 111, 45};
+    int switchPositions[4] = {90, -46, 111, 65};
   int mult = 0;
   if(FWD){
     mult = 1;
@@ -207,13 +207,14 @@ void recvWithEndMarker() {
 //Servo Functions
 void writeWrist(float angle){
   //range is 100 to 180
-  if(angle >= 70 && angle <= 160){
-    WristServo.write(int(angle)-100);
+  float RealAngle = angle+100;
+  if(RealAngle >= 70 && RealAngle <= 160){
+    WristServo.write(int(RealAngle));
   }
 }
 
 void closeGripper(){
-  GripperServo.write(55);
+  GripperServo.write(42);
 }
 
 void openGripper(){
@@ -242,7 +243,7 @@ void useSettings(){
     } else if(jointID == 5){
       writeWrist(set);
     } else if(jointID == 6){
-      if(set == 0){
+      if(set == 1){
         closeGripper();
       } else{
         openGripper();
@@ -274,6 +275,8 @@ void setup() {
   serialTimer = millis();
   GripperServo.attach(4);
   WristServo.attach(15);
+  writeWrist(0);
+  openGripper();
 }
 
 

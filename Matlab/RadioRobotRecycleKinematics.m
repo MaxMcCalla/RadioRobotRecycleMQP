@@ -108,7 +108,7 @@ serials = serialportlist();
             output = serialport(target,115200);
             break;
         catch exception
-            disp(target);
+            %disp(target);
         end
     end
     for i=1:5
@@ -117,7 +117,7 @@ serials = serialportlist();
         pause(0.2);
     end
     %Gripper State
-    send = string(i) + string(j(6)) + ">";
+    send = string(6) + string(j(6)) + ">";
     write(output, send, "string");
     pause(0.2);
 end
@@ -133,7 +133,7 @@ pose_publisher = ros2publisher(node, '/robot_pose', 'geometry_msgs/Transform');
 
 while(true)
 spaceSet = false;
-space = input("Select World(1) or Joint(2) space");
+space = input("Select World(1) or Joint(2) space, or Home Position(3) or scanning posiiton(4)");
 while(spaceSet == false)
     if space == 1
         inX = input("Select X");
@@ -157,9 +157,15 @@ while(spaceSet == false)
         j5 = input("Select Gripper State");
         joints = [j0, j1, j2, j3, j4, j5];
         spaceSet = true;
+    elseif space == 3
+        joints = [0 0 0 0 0 0];
+        spaceSet = true;
+    elseif space == 4
+        joints = [0 7 -55 90 60 1];
+        spaceSet = true;
     else
         disp("invalid input")
-        space = input("Select World(1) or Joint(2) space");
+        space = input("Select World(1) or Joint(2) space, or Home Position(3) or scanning posiiton(4)");
     end
 end
 %disp(round(rad2deg(joints(2))))
