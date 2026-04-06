@@ -207,7 +207,7 @@ void recvWithEndMarker() {
 //Servo Functions
 void writeWrist(float angle){
   //range is 100 to 180
-  float RealAngle = angle+100;
+  float RealAngle = (angle*0.6)+100;
   if(RealAngle >= 70 && RealAngle <= 160){
     WristServo.write(int(RealAngle));
   }

@@ -29,6 +29,7 @@ NewDHTable = [0 5.38 0 0
            theta4 13 0 0
            ];
 
+gripperLength = 7;
 
 function T = DHParam(params)
 theta = params(1);
@@ -138,10 +139,14 @@ while(spaceSet == false)
     if space == 1
         inX = input("Select X");
         inY = input("Select Y");
-        inZ = input("Select Z");
-        j4 = deg2rad(input("Select Wrist Tilt"));
-        j5 = input("Select Gripper State");
-        joints = [IK([inX,inY,inZ]',T,J),j4,j5];
+        inZ = input("Select Z") + gripperLength;
+        joints = IK([inX,inY,inZ]',T,J);
+        test5 = round(fk(joints(1:4),T),4)
+        wristTilt = asin(test5(3,1));
+        %j4 = deg2rad(input("Select Wrist Tilt"));
+        gripperState = input("Select Gripper State");
+        joints(5) = wristTilt;
+        joints(6) = gripperState;
         disp("Joint Values:")
         for index = 1:5
             disp(round(rad2deg(joints(index))))
