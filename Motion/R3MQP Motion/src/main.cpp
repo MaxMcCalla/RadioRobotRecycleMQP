@@ -109,7 +109,7 @@ void moveAllMotorsProtectedDegrees(double motorPositions[]){
 //The selected motor will move until it hits the switch, where it will stop and set the motorsReset variable to indicate that it has been reset
 void moveMotorToSwitch(int motorID, bool FWD){
   //int switchPositions[4] = {-170, -45, -135, -225}; 14
-    int switchPositions[4] = {90, -46, 111, 65};
+    int switchPositions[4] = {90, -45, 110, 65};
   int mult = 0;
   if(FWD){
     mult = 1;
@@ -207,8 +207,8 @@ void recvWithEndMarker() {
 //Servo Functions
 void writeWrist(float angle){
   //range is 100 to 180
-  float RealAngle = (angle*0.6)+100;
-  if(RealAngle >= 70 && RealAngle <= 160){
+  float RealAngle = (angle*0.66)+100;
+  if(RealAngle >= 60 && RealAngle <= 160){
     WristServo.write(int(RealAngle));
   }
 }

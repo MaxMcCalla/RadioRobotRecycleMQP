@@ -166,7 +166,7 @@ while(spaceSet == false)
         joints = [0 0 0 0 0 0];
         spaceSet = true;
     elseif space == 4
-        joints = [0 7 -55 90 60 1];
+        joints = [deg2rad(0) deg2rad(7) deg2rad(-55) deg2rad(-90) deg2rad(90) 1];
         spaceSet = true;
     else
         disp("invalid input")
