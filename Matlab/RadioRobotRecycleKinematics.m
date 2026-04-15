@@ -137,12 +137,27 @@ spaceSet = false;
 space = input("Select World(1) or Joint(2) space, or Home Position(3) or scanning posiiton(4)");
 while(spaceSet == false)
     if space == 1
+        gripperStatus = input("Select Gripper (1) or Vacuum (2)");
         inX = input("Select X");
         inY = input("Select Y");
-        inZ = input("Select Z") + gripperLength;
+        distance = sqrt(inX^2+inY^2);
+        angle = atan2(inY,inX);
+        inZ = input("Select Z");
+        if gripperStatus == 1
+            inZ = inZ + gripperLength;
+        else
+            inX = (distance + gripperLength) * cos(angle)
+            inY = (distance + gripperLength) * sin(angle)
+            inZ = inZ + 5
+        end
         joints = IK([inX,inY,inZ]',T,J);
         test5 = round(fk(joints(1:4),T),4)
-        wristTilt = asin(test5(3,1));
+        if gripperStatus == 1
+            wristTilt = asin(test5(3,1));
+        else
+            wristTilt = asin(-test5(1,1))
+            disp(round(rad2deg(wristTilt)))
+        end
         %j4 = deg2rad(input("Select Wrist Tilt"));
         gripperState = input("Select Gripper State");
         joints(5) = wristTilt;

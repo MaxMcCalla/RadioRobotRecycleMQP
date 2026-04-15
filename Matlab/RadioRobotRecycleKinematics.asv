@@ -29,6 +29,7 @@ NewDHTable = [0 5.38 0 0
            theta4 13 0 0
            ];
 
+gripperLength = 7;
 
 function T = DHParam(params)
 theta = params(1);
@@ -136,13 +137,26 @@ spaceSet = false;
 space = input("Select World(1) or Joint(2) space, or Home Position(3) or scanning posiiton(4)");
 while(spaceSet == false)
     if space == 1
+        gripperStatus = input("Select Gripper (1) or Vacuum (2)");
         inX = input("Select X");
         inY = input("Select Y");
+        distance = sqrt(inX^2+inY^2);
+        angle = atan2(inY,inX);
         inZ = input("Select Z");
-        joints = [IK([inX,inY,inZ]',T,J),j4,j5];
-        j4 = deg2rad(input("Select Wrist Tilt"));
-        j5 = input("Select Gripper State");
-        joints = [IK([inX,inY,inZ]',T,J),j4,j5];
+        if gripperStatus == 1
+            inZ = inZ + gripperLength;
+        else
+            inX = (distance + gripperLength) * cos(angle)
+            inY = (distance + gripperLength) * sin(angle)
+            inZ = inZ + 5
+        end
+        joints = IK([inX,inY,inZ]',T,J);
+        test5 = round(fk(joints(1:4),T),4)
+        wristTilt = asin(test5(3,1));
+        %j4 = deg2rad(input("Select Wrist Tilt"));
+        gripperState = input("Select Gripper State");
+        joints(5) = wristTilt;
+        joints(6) = gripperState;
         disp("Joint Values:")
         for index = 1:5
             disp(round(rad2deg(joints(index))))
@@ -162,7 +176,7 @@ while(spaceSet == false)
         joints = [0 0 0 0 0 0];
         spaceSet = true;
     elseif space == 4
-        joints = [0 7 -55 90 60 1];
+        joints = [deg2rad(0) deg2rad(7) deg2rad(-55) deg2rad(-90) deg2rad(90) 1];
         spaceSet = true;
     else
         disp("invalid input")
@@ -181,7 +195,7 @@ test5 = round(fk(joints(1:4),T),4);
 %test4
 x = [test1(1:3,4),test2(1:3,4),test3(1:3,4),test4(1:3,4),test5(1:3,4)];
 plot3(x(1,:),x(2,:),x(3,:))
-writeJointValues(joints)
+%writeJointValues(joints)
 xlim([0,30])
 ylim([-25,25])
 zlim([0,40])
